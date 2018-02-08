@@ -2,8 +2,11 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { DatePickerIOS, Text, TouchableHighlight, View } from 'react-native';
 import ReactNativeModal from 'react-native-modal';
+import { throttle } from 'lodash';
 
 import styles from './index.style';
+
+const TIMEOUT_AFTER_INTERACTION = 2000;
 
 export default class CustomDatePickerIOS extends PureComponent {
   static propTypes = {
@@ -44,7 +47,7 @@ export default class CustomDatePickerIOS extends PureComponent {
   state = {
     date: this.props.date,
     userIsInteractingWithPicker: false,
-    minuteInterval: 1
+    minuteInterval: 1,
   };
 
   componentWillReceiveProps(nextProps) {
@@ -54,6 +57,12 @@ export default class CustomDatePickerIOS extends PureComponent {
       });
     }
   }
+
+  _allowInteraction = throttle(
+    () => this.setState({ userIsInteractingWithPicker: false }),
+    TIMEOUT_AFTER_INTERACTION,
+    { trailing: true },
+  );
 
   _handleCancel = () => {
     this.confirmed = false;
@@ -74,8 +83,8 @@ export default class CustomDatePickerIOS extends PureComponent {
   _handleDateChange = date => {
     this.setState({
       date,
-      userIsInteractingWithPicker: false,
     });
+    this._allowInteraction();
   };
 
   _handleUserTouchInit = () => {
@@ -140,8 +149,8 @@ export default class CustomDatePickerIOS extends PureComponent {
         onModalHide={this._handleOnModalHide}
         onModalShow={() => {
           this.setState({
-             minuteInterval
-          })
+            minuteInterval,
+          });
         }}
         backdropOpacity={0.4}
         {...reactNativeModalPropsIOS}
